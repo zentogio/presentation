@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listeria ขนยา — click chemistry</title>
+<meta name="description" content="สรุปงานวิจัย: ติด doxorubicin ไว้ที่ผนังเซลล์ Listeria monocytogenes ด้วย click chemistry (ACS Chem. Biol. 2024)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Bai+Jamjuree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ห้องมืดของกล้องฟลูออเรสเซนต์: สีหลักคือสีย้อมจริงในงานวิจัย */
+  --bg: oklch(0.15 0.03 265);
+  --bg2: oklch(0.2 0.04 265);
+  --bg3: oklch(0.26 0.045 265);
+  --line: oklch(0.38 0.045 265);
+  --ink: oklch(0.97 0.008 250);
+  --ink2: oklch(0.82 0.025 255);
+  --ink3: oklch(0.72 0.03 255);
+  --green: oklch(0.85 0.21 150);   /* แบคทีเรีย AF488 */
+  --red: oklch(0.7 0.22 27);       /* doxorubicin */
+  --blue: oklch(0.76 0.14 250);    /* นิวเคลียส DAPI */
+  --amber: oklch(0.86 0.16 88);    /* เอนไซม์ / ตัวเร่ง */
+
+  /* Archivo รับอักษรละติน, Bai Jamjuree รับอักษรไทย — คนละสคริปต์จึงไม่แย่งกัน
+     ลำดับชั้นเพิ่มเติมมาจากแกนความกว้าง (wdth) ของ Archivo ไม่ใช่ฟอนต์ตัวที่สาม */
+  --sans:'Archivo','Bai Jamjuree',system-ui,sans-serif;
+  --t-micro:19px; --t-cap:23px; --t-body:28px; --t-lead:33px;
+  --t-sub:41px;   --t-h2:64px;  --t-xl:80px;  --t-display:96px;
+
+  --ease: cubic-bezier(.16,1,.3,1);          /* ease-out-expo */
+  --ease-in: cubic-bezier(.55,.06,.68,.19);
+
+  --z-slide:1; --z-film:20; --z-chrome:30;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+  font-family:var(--sans);color:var(--ink);
+  font-kerning:normal;font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;overflow:hidden;
+  background:
+    radial-gradient(1100px 800px at 82% 18%, oklch(0.23 0.07 270 / .85), transparent 70%),
+    radial-gradient(900px 700px at 8% 100%, oklch(0.2 0.06 195 / .7), transparent 70%),
+    var(--bg)}
+#stage::after{content:"";position:absolute;width:1500px;height:1500px;border-radius:50%;left:210px;top:-210px;
+  border:1px solid oklch(0.3 0.04 265 / .6);pointer-events:none}
+
+/* ---------- การเปลี่ยนหน้า: ปรับโฟกัสกล้องจุลทรรศน์ ---------- */
+.slide{position:absolute;inset:0;padding:92px 120px 120px;visibility:hidden;opacity:0;z-index:var(--z-slide)}
+.slide.active{visibility:visible;opacity:1}
+.slide.leaving{visibility:visible;animation:pullOut .34s var(--ease-in) both}
+.slide.active.arriving{animation:pullIn .58s var(--ease) both}
+@keyframes pullOut{from{opacity:1;filter:blur(0px);transform:scale(1)}
+                   to{opacity:0;filter:blur(14px);transform:scale(1.035)}}
+@keyframes pullIn{from{opacity:0;filter:blur(16px);transform:scale(.985)}
+                  to{opacity:1;filter:blur(0px);transform:scale(1)}}
+
+/* เส้นสแกนแบบ confocal กวาดผ่านหนึ่งครั้งต่อการเปลี่ยนหน้า */
+#sweep{position:absolute;inset:0;z-index:var(--z-film);pointer-events:none;overflow:hidden;opacity:0}
+#sweep .mir{position:absolute;inset:0}
+#sweep.back .mir{transform:scaleX(-1)}
+#sweep .run{position:absolute;top:-4%;height:108%;left:0;width:0}
+#sweep u,#sweep b{position:absolute;top:0;bottom:0;transform:skewX(-7deg)}
+#sweep u{right:3px;width:460px;background:linear-gradient(90deg,transparent,oklch(0.85 0.21 150 / .14))}
+#sweep b{right:0;width:3px;background:oklch(0.95 0.18 150);box-shadow:0 0 30px 7px oklch(0.85 0.21 150 / .5)}
+#sweep.go{animation:sweepFade .62s linear both}
+#sweep.go .run{animation:sweepRun .62s cubic-bezier(.32,0,.24,1) both}
+@keyframes sweepRun{from{transform:translateX(-540px)}to{transform:translateX(2460px)}}
+@keyframes sweepFade{0%{opacity:0}10%{opacity:1}78%{opacity:1}100%{opacity:0}}
+
+/* เกรนบาง ๆ กันพื้นหลังเรียบจนดูเป็นภาพเรนเดอร์ */
+#grain{position:absolute;inset:0;pointer-events:none;z-index:var(--z-film);opacity:.055;mix-blend-mode:overlay;
+  background-size:240px 240px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+h1,h2,p{margin:0}
+h1{font-size:var(--t-display);line-height:1.08;font-weight:700;font-stretch:112%;letter-spacing:-.02em;text-wrap:balance}
+h2{font-size:var(--t-h2);line-height:1.14;font-weight:700;font-stretch:108%;letter-spacing:-.015em;text-wrap:balance;max-width:1480px}
+em{font-style:normal;color:var(--red)}
+em.g{color:var(--green)}
+.lead{font-size:var(--t-lead);line-height:1.62;color:var(--ink2);max-width:30em;letter-spacing:.005em;text-wrap:pretty}
+.hi-g{color:var(--green)} .hi-r{color:var(--red)} .hi-b{color:var(--blue)} .hi-a{color:var(--amber)}
+#stage svg text{font-family:var(--sans);font-kerning:normal}
+
+/* chrome */
+.chrome{position:absolute;left:120px;right:120px;bottom:44px;display:flex;justify-content:space-between;align-items:center;
+  font-size:var(--t-micro);font-stretch:84%;font-weight:600;letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;color:var(--ink3);z-index:var(--z-chrome);pointer-events:none}
+.chrome .nav{pointer-events:auto;display:flex;gap:12px;align-items:center}
+.chrome button{font:inherit;color:var(--ink2);background:transparent;border:1px solid var(--line);
+  width:46px;height:40px;cursor:pointer;font-size:24px;line-height:1}
+.chrome button:hover{background:var(--bg3);color:var(--ink)}
+.chrome button:focus-visible,.seg button:focus-visible,.again:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+/* ตัวบอกตำแหน่งแบบสเกลเครื่องมือ: ช่องหนึ่งต่อหนึ่งหน้า เลื่อนไปตามหน้าที่เปิด */
+#rail{position:absolute;left:0;right:0;bottom:0;height:3px;background:oklch(0.3 0.04 265);z-index:var(--z-chrome)}
+#rail span{position:absolute;inset:0 auto 0 0;width:10%;background:var(--green);
+  box-shadow:0 0 16px oklch(0.85 0.21 150 / .8);transition:transform .55s var(--ease)}
+body.cover .chrome .src,body.cover .chrome .pg{visibility:hidden}
+
+/* entrance */
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+.active .rise{animation:rise .9s var(--ease) both;animation-delay:var(--d,0s)}
+.active .fade{animation:fade 1s ease both;animation-delay:var(--d,0s)}
+.pop{transform-box:fill-box;transform-origin:center}
+.active .pop{animation:pop .55s var(--ease) both;animation-delay:var(--d,0s)}
+
+/* buttons */
+.seg{display:inline-flex;border:1px solid var(--line);padding:5px;background:var(--bg2);gap:5px}
+.seg button{font:600 var(--t-body)/1 var(--sans);color:var(--ink2);background:transparent;border:0;padding:12px 28px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue);color:oklch(0.16 0.03 265)}
+.again{font:600 var(--t-cap)/1 var(--sans);font-stretch:92%;letter-spacing:.03em;
+  color:var(--amber);background:transparent;border:1px solid var(--amber);padding:15px 30px;cursor:pointer}
+.again:hover{background:var(--amber);color:oklch(0.16 0.03 265)}
+
+/* ---------- S1 cover ---------- */
+#s1{padding:0}
+#fieldCv{position:absolute;inset:0;width:1920px;height:1080px}
+#s1 .scrim{position:absolute;inset:0;background:linear-gradient(90deg,oklch(0.15 0.03 265 / .95) 0%,oklch(0.15 0.03 265 / .9) 40%,oklch(0.15 0.03 265 / .55) 62%,transparent 82%)}
+#s1 .txt{position:absolute;left:120px;top:246px;width:960px}
+#s1 h1{margin-bottom:40px}
+#s1 .lead{margin-bottom:52px;max-width:22em}
+#s1 .meta{font-size:var(--t-cap);font-stretch:86%;font-weight:600;letter-spacing:.05em;color:var(--ink3);
+  border-top:1px solid var(--line);padding-top:20px;display:inline-block}
+#s1 .hint{position:absolute;left:120px;bottom:84px;font-size:var(--t-cap);color:var(--green);letter-spacing:.02em}
+
+/* ---------- S2 ---------- */
+#s2{display:grid;grid-template-columns:680px 1fr;column-gap:70px;align-content:start}
+#s2 .left{display:flex;flex-direction:column;gap:32px;padding-top:26px}
+.legend{display:flex;flex-direction:column;gap:13px;font-size:var(--t-body);color:var(--ink2)}
+.legend i{display:inline-block;width:20px;height:20px;border-radius:50%;margin-right:16px;vertical-align:-1px}
+.punch{font-size:var(--t-sub);line-height:1.34;font-weight:600;font-stretch:104%;color:var(--green);max-width:14em}
+@keyframes shoot{0%{transform:translate(0,0);opacity:0}8%{opacity:1}62%{transform:translate(var(--tx),var(--ty));opacity:1}78%,100%{transform:translate(var(--tx),var(--ty));opacity:0}}
+@keyframes hurt{0%,58%{fill:var(--nuc)}66%,86%{fill:var(--red)}100%{fill:var(--nuc)}}
+.dot{fill:var(--red);filter:drop-shadow(0 0 8px var(--red));opacity:0}
+.active .dot{animation:shoot 4.4s ease-in-out infinite;animation-delay:var(--d)}
+.nuc{fill:var(--nuc)}
+.active .nuc{animation:hurt 4.4s ease-in-out infinite;animation-delay:var(--d)}
+
+/* ---------- S3 ---------- */
+#s3 .lead{margin-top:14px;max-width:34em}
+#s3 svg{display:block;margin-top:6px}
+/* รางลำดับขั้น: ขีดบอกตำแหน่งบนเส้นเดียว ไม่ใช่กล่องสี่ใบ */
+.rail{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line)}
+.rail li{position:relative;padding:30px 48px 0 0;font-size:var(--t-cap);line-height:1.35;color:var(--ink3)}
+.rail li::before{content:"";position:absolute;top:-1px;left:0;width:2px;height:19px;background:currentColor}
+.rail li span{display:block;font-size:var(--t-micro);font-stretch:82%;font-weight:700;letter-spacing:.1em;
+  color:inherit;opacity:.8;margin-bottom:7px;font-variant-numeric:tabular-nums}
+@keyframes r1{0%,22%{color:var(--green)}23%,100%{color:var(--ink3)}}
+@keyframes r2{0%,22%{color:var(--ink3)}23%,44%{color:var(--green)}45%,100%{color:var(--ink3)}}
+@keyframes r3{0%,44%{color:var(--ink3)}45%,58%{color:var(--green)}59%,100%{color:var(--ink3)}}
+@keyframes r4{0%,58%{color:var(--ink3)}59%,92%{color:var(--green)}93%,100%{color:var(--ink3)}}
+.active .rail li:nth-child(1){animation:r1 12s linear infinite}
+.active .rail li:nth-child(2){animation:r2 12s linear infinite}
+.active .rail li:nth-child(3){animation:r3 12s linear infinite}
+.active .rail li:nth-child(4){animation:r4 12s linear infinite}
+.rodg rect{fill:var(--green);filter:drop-shadow(0 0 10px var(--green))}
+.rodg ellipse{fill:oklch(0.45 0.12 150)}
+@keyframes k-rod1{0%{transform:translate(110px,230px);opacity:0}4%{opacity:1}18%{transform:translate(325px,230px)}26%{transform:translate(500px,230px)}40%{transform:translate(520px,230px);opacity:1}44%,100%{transform:translate(520px,230px);opacity:0}}
+@keyframes k-ring{0%,22%{opacity:0;transform:scale(.5)}28%{opacity:1;transform:scale(1)}40%{opacity:1;transform:scale(1)}44%{opacity:0;transform:scale(1.7)}100%{opacity:0}}
+@keyframes k-rodsA{0%,43%{opacity:0}50%{opacity:1}93%{opacity:1}100%{opacity:0}}
+@keyframes k-rodX{0%,56%{opacity:0;transform:translate(610px,250px)}58%{opacity:1;transform:translate(610px,250px)}84%{opacity:1;transform:translate(1160px,230px)}88%,100%{opacity:0;transform:translate(1160px,230px)}}
+@keyframes k-rodsB{0%,84%{opacity:0}90%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.loop{opacity:0}
+.active #rod1{animation:k-rod1 12s linear infinite}
+.active #ring{animation:k-ring 12s linear infinite}
+.active #rodsA{animation:k-rodsA 12s linear infinite}
+.active #rodX{animation:k-rodX 12s linear infinite}
+.active #rodsB{animation:k-rodsB 12s linear infinite}
+#ring{transform-box:fill-box;transform-origin:center}
+
+/* ---------- S4 ---------- */
+#s4 .wrap{position:relative;width:1680px;height:470px;margin-top:20px}
+#s4 svg{position:absolute;left:0;top:0}
+#s4 .cap{position:absolute;top:350px;width:440px;text-align:center;font-size:var(--t-cap);line-height:1.45;color:var(--ink2)}
+#s4 .cap b{display:block;font-size:var(--t-lead);font-stretch:104%;color:var(--ink);margin-bottom:8px}
+#s4 .lead{margin-top:16px}
+
+/* ---------- S5 ---------- */
+#s5{display:grid;grid-template-columns:640px 1fr;column-gap:50px;align-content:start}
+#s5 .left{display:flex;flex-direction:column;gap:28px;padding-top:18px}
+.mode{font-size:var(--t-body);line-height:1.6;color:var(--ink2);min-height:7.6em;letter-spacing:.005em}
+.mode[hidden]{display:none}
+.mode b{color:var(--ink)}
+
+/* ---------- S6 ---------- */
+#s6{display:grid;grid-template-columns:640px 1fr;column-gap:50px;align-content:start}
+#s6 .left{display:flex;flex-direction:column;gap:26px;padding-top:18px}
+#s6 .reag{font-size:var(--t-cap);line-height:1.65;color:var(--ink3);border-top:1px solid var(--line);padding-top:20px}
+
+/* ---------- S7 ---------- */
+#s7{display:grid;grid-template-columns:1000px 1fr;column-gap:80px;align-content:start}
+#s7 h2{grid-column:1/-1;margin-bottom:10px}
+#s7 .tubes{position:relative;width:1000px;height:650px}
+#s7 .tubes svg{position:absolute;left:0;top:0}
+#s7 .tl{position:absolute;top:490px;width:300px;text-align:center;font-size:var(--t-cap);line-height:1.45;color:var(--ink2)}
+#s7 .tl b{display:block;color:var(--ink);font-size:var(--t-lead);font-stretch:104%;margin-bottom:6px}
+.proof{padding-top:34px}
+.proof .t{font-size:var(--t-lead);line-height:1.3;color:var(--ink);font-weight:600;font-stretch:104%;margin-bottom:22px}
+.ruled{margin:0}
+.ruled>div{padding:17px 0;border-top:1px solid var(--line)}
+.ruled>div:last-child{border-bottom:1px solid var(--line)}
+.ruled dt{font-size:var(--t-body);font-weight:600;color:var(--ink);line-height:1.3}
+.ruled dd{margin:5px 0 0;font-size:var(--t-cap);color:var(--ink2);line-height:1.4}
+.ruled .ok dt{color:var(--green)}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes redden{from{fill:oklch(0.78 0.05 150)}to{fill:oklch(0.62 0.22 28)}}
+.pellet{transform-box:fill-box;transform-origin:bottom center;fill:oklch(0.78 0.05 150)}
+.active .pellet{animation:grow 1.2s var(--ease) both;animation-delay:var(--d)}
+.active .pellet.dx{animation:grow 1.2s var(--ease) both .5s, redden 1.8s ease both 1.9s}
+
+/* ---------- S8 ---------- */
+#s8 .lead{margin-top:12px}
+#s8 svg{display:block;margin-top:14px}
+@keyframes bounce{0%,30%{transform:translate(0,0);opacity:0}34%{opacity:1}56%{transform:translate(var(--bx),0)}70%{transform:translate(calc(var(--bx) - 70px),-30px)}90%{transform:translate(calc(var(--bx) - 160px),-45px);opacity:1}100%{opacity:0;transform:translate(calc(var(--bx) - 160px),-45px)}}
+@keyframes enter{0%,40%{transform:translate(0,0);opacity:0}44%{opacity:1}74%{transform:translate(var(--bx),0);opacity:1}86%,100%{transform:translate(var(--bx),0);opacity:0}}
+@keyframes scis{0%{transform:translate(0,-90px);opacity:0}8%{opacity:1}30%{transform:translate(0,0);opacity:1}40%{transform:translate(0,0);opacity:1}48%,100%{transform:translate(0,-90px);opacity:0}}
+@keyframes glow{0%,70%{opacity:0}78%,92%{opacity:.9}100%{opacity:0}}
+@keyframes cutflash{0%,36%{opacity:0}40%{opacity:1}52%,100%{opacity:0}}
+.active #drugA{animation:bounce 6s ease-in-out infinite}
+.active #drugB{animation:enter 6s ease-in-out infinite}
+.active #scis{animation:scis 6s ease-in-out infinite}
+.active #nucGlow{animation:glow 6s ease-in-out infinite}
+.active #cutfl{animation:cutflash 6s ease-in-out infinite}
+.opacity0{opacity:0}
+
+/* ---------- S9 ---------- */
+#s9 .row{display:grid;grid-template-columns:520px 520px 560px;column-gap:40px;margin-top:34px}
+#s9 .pn{display:flex;flex-direction:column;gap:16px}
+#s9 canvas{width:520px;height:480px;display:block}
+#s9 .pc{font-size:var(--t-cap);line-height:1.45;color:var(--ink2);border-top:1px solid var(--line);padding-top:16px}
+#s9 .pc b{color:var(--ink);display:block;font-size:var(--t-lead);font-stretch:104%;margin-bottom:6px}
+#s9 .fish{display:flex;flex-direction:column;gap:6px}
+#s9 .fish svg{display:block}
+#s9 .fine{position:absolute;left:120px;bottom:104px;font-size:var(--t-micro);font-stretch:86%;letter-spacing:.03em;color:var(--ink3)}
+@keyframes tum{from{transform:scale(.2)}to{transform:scale(1)}}
+.tumor{transform-box:fill-box;transform-origin:center;fill:var(--green);filter:drop-shadow(0 0 12px var(--green))}
+.active .tumor{animation:tum 3.4s var(--ease) both .4s}
+
+/* ---------- S10 ---------- */
+#s10{padding-top:84px}
+#s10 h2{font-size:var(--t-xl);max-width:1560px}
+#s10 .cols{display:grid;grid-template-columns:repeat(3,1fr);margin-top:40px;border-top:1px solid var(--line)}
+#s10 .cols>div{font-size:var(--t-body);line-height:1.45;color:var(--ink2);padding:24px 44px 0 0}
+#s10 .cols>div+div{border-left:1px solid var(--line);padding-left:44px}
+#s10 .cols b{color:var(--ink)}
+#s10 .thx{font-size:var(--t-sub);font-weight:600;font-stretch:104%;color:var(--green);margin-top:34px}
+#s10 .credit{position:absolute;left:120px;right:120px;bottom:104px;border-top:1px solid var(--line);padding-top:24px;
+  display:grid;grid-template-columns:150px 1fr;row-gap:13px;column-gap:28px;
+  font-size:var(--t-cap);line-height:1.5;color:var(--ink2)}
+#s10 .credit dt{font-size:var(--t-micro);font-stretch:82%;font-weight:600;letter-spacing:.06em;color:var(--ink3);padding-top:5px}
+#s10 .credit dd{margin:0}
+#s10 .credit dd strong{color:var(--ink);font-weight:600}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.001s!important}
+  .loop{opacity:1}
+  #rod1,#ring,#rodX,#rodsB{opacity:0}
+  .dot{opacity:0}
+  .slide.leaving{animation:none;opacity:0;filter:none}
+  .slide.active.arriving{animation:none;opacity:1;filter:none;transform:none}
+  #sweep{display:none}
+  .rail li{color:var(--ink2);animation:none}
+}
+</style>
+</head>
+<body class="cover">
+<div id="stage">
+
+<!-- 1 INTRO -->
+<section class="slide active" id="s1" aria-label="อินโทร">
+  <canvas id="fieldCv" width="1920" height="1080" aria-hidden="true"></canvas>
+  <div class="scrim"></div>
+  <div class="txt">
+    <h1 class="rise" style="--d:.15s">Bacteria ที่ถูกสอนให้ <em>ขนยา</em></h1>
+    <p class="lead rise" style="--d:.45s">ใช้ click chemistry ติด doxorubicin ไว้ที่ผนังเซลล์ของ Listeria เพื่อสู้กับมะเร็งผิวหนัง</p>
+    <p class="meta rise" style="--d:.7s">Lepori et al. · ACS Chemical Biology · 2024</p>
+  </div>
+  <p class="hint fade" style="--d:1.4s">กด → หรือปัดเพื่อเริ่ม</p>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide" id="s2" aria-label="ปัญหา">
+  <div class="left">
+    <h2 class="rise">เคมีบำบัดฆ่า “ทุกเซลล์” ที่แบ่งตัวเร็ว</h2>
+    <p class="lead rise" style="--d:.2s">ยากระจายทั่วร่างกาย เซลล์ปกติโดนด้วย ผลข้างเคียงจึงหนัก</p>
+    <div class="legend rise" style="--d:.35s">
+      <span><i style="background:var(--blue)"></i>เซลล์ปกติ</span>
+      <span><i style="background:var(--amber)"></i>เซลล์มะเร็ง</span>
+      <span><i style="background:var(--red)"></i>ยาเคมีบำบัด</span>
+    </div>
+    <p class="punch rise" style="--d:.5s">ถ้ามี “พาหนะ” ที่เดินไปหาก้อนมะเร็งเองได้ล่ะ?</p>
+  </div>
+  <svg viewBox="0 0 1000 780" width="1000" height="780" role="img" aria-label="ยาเคมีบำบัดกระจายไปโดนทั้งเซลล์ปกติและเซลล์มะเร็ง" id="svg2"></svg>
+</section>
+
+<!-- 3 LISTERIA -->
+<section class="slide" id="s3" aria-label="Listeria">
+  <h2 class="rise">Listeria เดินทะลุจากเซลล์สู่เซลล์ได้เอง</h2>
+  <p class="lead rise" style="--d:.15s">สายพันธุ์ที่ทำให้อ่อนแรง (Lm<sub>at</sub>) ถูกใช้เป็นวัคซีนมะเร็งอยู่แล้ว</p>
+  <svg viewBox="0 0 1680 460" width="1680" height="460" role="img" aria-label="แบคทีเรียเข้าเซลล์ หนีออกจาก phagosome แบ่งตัว แล้วส่งต่อไปเซลล์ข้างเคียง" id="svg3">
+    <g fill="oklch(0.2 0.05 255)" stroke-width="4">
+      <circle cx="520" cy="230" r="195" stroke="var(--amber)"/>
+      <circle cx="1160" cy="230" r="195" stroke="var(--amber)"/>
+    </g>
+    <circle cx="520" cy="230" r="195" fill="none" stroke="oklch(0.5 0.08 90)" stroke-width="1"/>
+    <circle cx="400" cy="130" r="38" fill="oklch(0.3 0.09 255)"/>
+    <circle cx="1280" cy="130" r="38" fill="oklch(0.3 0.09 255)"/>
+    <text x="520" y="445" text-anchor="middle" font-size="28" fill="var(--ink3)" font-family="Anuphan">เซลล์มะเร็ง A</text>
+    <text x="1160" y="445" text-anchor="middle" font-size="28" fill="var(--ink3)" font-family="Anuphan">เซลล์มะเร็ง B</text>
+    <circle id="ring" class="loop" cx="520" cy="230" r="64" fill="none" stroke="var(--amber)" stroke-width="4" stroke-dasharray="10 8"/>
+    <g id="rod1" class="loop rodg"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+    <g id="rodsA" class="loop rodg">
+      <g transform="translate(470,200) rotate(-25)"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+      <g transform="translate(570,215) rotate(20)"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+      <g transform="translate(520,285) rotate(-5)"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+    </g>
+    <g id="rodX" class="loop rodg"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+    <g id="rodsB" class="loop rodg">
+      <g transform="translate(1120,215) rotate(15)"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+      <g transform="translate(1210,255) rotate(-20)"><rect x="-40" y="-14" width="80" height="28" rx="14"/></g>
+    </g>
+  </svg>
+  <ol class="rail">
+    <li><span>01</span>เข้าเซลล์</li>
+    <li><span>02</span>หนีออกจาก phagosome</li>
+    <li><span>03</span>แบ่งตัวใน cytoplasm</li>
+    <li><span>04</span>ส่งต่อเซลล์ข้างๆ</li>
+  </ol>
+</section>
+
+<!-- 4 IDEA -->
+<section class="slide" id="s4" aria-label="ไอเดีย">
+  <h2 class="rise">ติดยาไว้ที่ “ผิว” แทนการแก้ยีน</h2>
+  <p class="lead rise" style="--d:.15s">ผนังเซลล์เป็นตาข่าย peptidoglycan — ปักตะขอเคมี แล้วคลิกยาเข้าไป</p>
+  <div class="wrap">
+    <svg viewBox="0 0 1680 330" width="1680" height="330" id="svg4" role="img" aria-label="แบคทีเรียปกติ แบคทีเรียมีตะขอ และแบคทีเรียติดยา"></svg>
+    <div class="cap rise" style="left:30px;--d:.3s"><b>Lm<sub>at</sub></b>แบคทีเรียที่อ่อนแรงแล้ว</div>
+    <div class="cap rise" style="left:620px;--d:.9s"><b class="hi-b">+ ตะขอ alkyne</b>ขั้น 1 · metabolic labeling</div>
+    <div class="cap rise" style="left:1210px;--d:1.7s"><b class="hi-r">dox-Lm<sub>at</sub></b>ขั้น 2 · click chemistry</div>
+  </div>
+</section>
+
+<!-- 5 STEP 1 -->
+<section class="slide" id="s5" aria-label="ขั้น 1">
+  <div class="left">
+    <h2 class="rise">ขั้น 1: ฝัง “ตะขอ” ลงในผนังเซลล์</h2>
+    <p class="lead rise" style="--d:.15s">เลี้ยงแบคทีเรียกับ D-alanine ที่มีหมู่ alkyne แล้วมันสร้างตะขอเข้าผนังเอง</p>
+    <div class="seg rise" role="group" aria-label="เลือกโพรบ" style="--d:.3s;align-self:flex-start">
+      <button id="m1" aria-pressed="false">alkDA</button>
+      <button id="m2" aria-pressed="true">alkDADA</button>
+    </div>
+    <p class="mode" id="t1" hidden><b>ตะขออยู่ที่ D-Ala ตัวที่ 5</b> ซึ่งเอนไซม์ในผนังตัดทิ้งได้ ตะขอเลยเหลือน้อย โหลดยาได้ไม่เยอะ</p>
+    <p class="mode" id="t2"><b>ตะขออยู่ที่ตัวที่ 4</b> เอนไซม์ตัดไม่ได้ ตะขอคงอยู่ โหลดได้มากกว่า ผู้วิจัยจึงเลือกตัวนี้</p>
+  </div>
+  <svg viewBox="0 0 1100 740" width="1100" height="740" id="svg5" role="img" aria-label="ส่วนตัดของผนังเซลล์แสดงตะขอ alkyne ติดที่ก้านเปปไทด์"></svg>
+</section>
+
+<!-- 6 STEP 2 -->
+<section class="slide" id="s6" aria-label="ขั้น 2">
+  <div class="left">
+    <h2 class="rise">ขั้น 2: “คลิก” ยาเข้ากับตะขอ</h2>
+    <p class="lead rise" style="--d:.15s">azide บนยา + alkyne บนผนัง ต่อกันเป็นพันธะโควาเลนต์ (triazole) โดยไม่ยุ่งกับโมเลกุลอื่นในระบบ</p>
+    <p class="reag rise" style="--d:.3s">เร่งด้วย Cu(I) จาก CuSO<sub>4</sub> + ascorbate + ligand BTTP<br>ทำใน NaCl 0.9% + DMSO 25% ให้ยาละลาย</p>
+    <button class="again rise" id="again6" style="--d:.4s;align-self:flex-start">เล่นอีกครั้ง</button>
+  </div>
+  <svg viewBox="0 0 1100 740" width="1100" height="740" id="svg6" role="img" aria-label="โมเลกุล azide-doxorubicin ถูกคลิกเข้ากับตะขอ alkyne บนผนัง"></svg>
+</section>
+
+<!-- 7 PROOF -->
+<section class="slide" id="s7" aria-label="หลักฐานว่ายาติด">
+  <h2 class="rise">ติดจริงไหม? pellet เปลี่ยนเป็นสีแดง</h2>
+  <div class="tubes">
+    <svg viewBox="0 0 1000 650" width="1000" height="650" id="svg7" role="img" aria-label="หลอดทดลอง 3 หลอด มีเพียง dox-Lmat ที่ pellet เป็นสีแดง"></svg>
+    <div class="tl" style="left:17px"><b>Lm<sub>at</sub> ปกติ</b>ไม่ทำอะไรเลย</div>
+    <div class="tl" style="left:350px"><b>ไม่มีตะขอ</b>ใส่ az-dox แล้วล้างทิ้ง</div>
+    <div class="tl" style="left:683px"><b class="hi-r">dox-Lm<sub>at</sub></b>ตะขอ + คลิกยา</div>
+  </div>
+  <div class="proof">
+    <p class="t rise" style="--d:.3s">ยืนยันซ้ำหลายวิธี</p>
+    <dl class="ruled">
+      <div class="rise" style="--d:.4s"><dt>Fluorescence microscopy</dt><dd>เห็นตัวแบคทีเรียเรืองเป็นสีแดง</dd></div>
+      <div class="rise" style="--d:.5s"><dt>Flow cytometry</dt><dd>วัดความเข้มของทั้งประชากร</dd></div>
+      <div class="rise" style="--d:.6s"><dt>FLIM</dt><dd>แยกยาที่ติดผนังออกจากยาที่เหลือ</dd></div>
+      <div class="rise ok" style="--d:.8s"><dt>ยังมีชีวิต แบ่งตัวได้</dt><dd>หลังผ่านการโหลดยาแล้ว</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- 8 LINKER -->
+<section class="slide" id="s8" aria-label="ตัวเชื่อม">
+  <h2 class="rise">เลือกตัวเชื่อม: ติดแน่น หรือ ปล่อยยาถูกที่</h2>
+  <p class="lead rise" style="--d:.15s">ในงานนี้ ผลลดการแบ่งตัวของมะเร็งทั้งสองแบบใกล้เคียงกัน</p>
+  <svg viewBox="0 0 1680 640" width="1680" height="640" id="svg8" role="img" aria-label="เปรียบเทียบ linker azidoacetic ที่ตัดไม่ได้กับ az-VC ที่ cathepsin ตัดแล้วปล่อยยาเข้านิวเคลียส"></svg>
+</section>
+
+<!-- 9 RESULTS -->
+<section class="slide" id="s9" aria-label="ผลลัพธ์">
+  <h2 class="rise">ผล: มะเร็งแบ่งตัวช้าลง ก้อนเล็กลง</h2>
+  <div class="row">
+    <div class="pn rise" style="--d:.2s">
+      <canvas id="dishA" width="520" height="480" aria-label="จำลองเซลล์ในจานเลี้ยง กลุ่มควบคุมแบ่งตัวต่อเนื่อง"></canvas>
+      <p class="pc"><b>flu-Lm<sub>at</sub> (control)</b>เซลล์ยังแบ่งตัวต่อเนื่อง</p>
+    </div>
+    <div class="pn rise" style="--d:.35s">
+      <canvas id="dishB" width="520" height="480" aria-label="จำลองเซลล์ในจานเลี้ยง กลุ่มติดยาแบ่งตัวน้อย"></canvas>
+      <p class="pc"><b class="hi-r">dox-Lm<sub>at</sub></b>เซลล์ที่กำลังแบ่งตัวน้อยลง</p>
+    </div>
+    <div class="fish rise" style="--d:.5s">
+      <svg viewBox="0 0 560 480" width="560" height="480" id="svg9" role="img" aria-label="ปลา zebrafish ที่ฉีดเซลล์มะเร็ง กลุ่ม dox ก้อนเล็กกว่า"></svg>
+      <p class="pc"><b>Zebrafish xenograft</b>48 ชม. ต่อมา ก้อนเล็กกว่าอย่างมีนัยสำคัญ</p>
+    </div>
+  </div>
+  <p class="fine">ภาพจำลองเชิงคุณภาพเพื่ออธิบาย ไม่ใช่ข้อมูลดิบจากการทดลอง · เซลล์: A375 melanoma</p>
+</section>
+
+<!-- 10 OUTRO + CREDITS -->
+<section class="slide" id="s10" aria-label="สรุปและเครดิต">
+  <h2 class="rise">Immunotherapy + chemotherapy ใน <em class="g">ตัวเดียว</em></h2>
+  <div class="cols">
+    <div class="rise" style="--d:.2s"><b>โหลดยาได้</b> โดยแบคทีเรียยังรอดและแบ่งตัว</div>
+    <div class="rise" style="--d:.3s"><b>ลดการแบ่งตัว</b> ของ melanoma ทั้งในจานเลี้ยงและในปลา</div>
+    <div class="rise" style="--d:.4s"><b>ข้อจำกัด</b> เข้าเซลล์ได้น้อยลง และยังอยู่ระดับก่อนคลินิก</div>
+  </div>
+  <p class="thx rise" style="--d:.55s">ขอบคุณที่รับชม</p>
+  <dl class="credit rise" style="--d:.7s">
+    <dt>งานวิจัย</dt>
+    <dd><strong>Enhancing the Anticancer Activity of Attenuated Listeria monocytogenes by Cell Wall Functionalization with “Clickable” Doxorubicin</strong></dd>
+    <dt>ผู้วิจัย</dt>
+    <dd>Irene Lepori, Marta Roncetti, Marianna Vitiello, Elisabetta Barresi, Raffaella De Paolo, Paolo Maria Tentori, Caterina Baldanzi, Melissa Santi, Monica Evangelista, Giovanni Signore, Lorena Tedeschi, Claudia Gravekamp, Francesco Cardarelli, Sabrina Taliani, Federico Da Settimo, M. Sloan Siegrist*, Laura Poliseno*</dd>
+    <dt>อ้างอิง</dt>
+    <dd>ACS Chem. Biol. 2024, 19, 2131–2140 · doi.org/10.1021/acschembio.4c00250 · CC BY 4.0</dd>
+    <dt>สไลด์นี้</dt>
+    <dd>ภาพและอนิเมชันวาดขึ้นใหม่เพื่อประกอบการอธิบาย ไม่ได้คัดลอกรูปจากบทความ · สร้างด้วย Claude Code</dd>
+  </dl>
+</section>
+
+<div id="grain" aria-hidden="true"></div>
+<div id="sweep" aria-hidden="true"><div class="mir"><div class="run"><u></u><b></b></div></div></div>
+
+<div class="chrome">
+  <span class="src">Lepori et al., ACS Chem. Biol. 2024</span>
+  <span class="nav">
+    <button id="prev" aria-label="ก่อนหน้า">‹</button>
+    <span class="pg" id="pg">1 / 10</span>
+    <button id="next" aria-label="ถัดไป">›</button>
+  </span>
+</div>
+<div id="rail" aria-hidden="true"><span></span></div>
+</div>
+
+<script>
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, parent) => {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+const sleep = ms => new Promise(r => setTimeout(r, RM ? 0 : ms));
+const T = ms => RM ? 0 : ms;
+
+/* ---------- stage scaling + navigation ---------- */
+const stage = $('#stage');
+function fit(){ const s = Math.min(innerWidth/1920, innerHeight/1080);
+  stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit); fit();
+
+const slides = [...document.querySelectorAll('.slide')];
+let cur = 0;
+const enter = {};
+const sweep = $('#sweep'), railDot = $('#rail span');
+const OUT = RM ? 10 : 340, IN = RM ? 10 : 600;
+function go(n, fromHash){
+  n = Math.max(0, Math.min(slides.length-1, n));
+  if (n === cur && !fromHash && slides[cur].classList.contains('active')) return;
+  const dir = n < cur ? -1 : 1;
+  // ขาออก: เบลอแล้วจาง เหมือนหมุนปุ่มโฟกัสออก
+  const old = slides[cur];
+  old.classList.remove('active', 'arriving');
+  old.classList.add('leaving');
+  clearTimeout(old._t); old._t = setTimeout(() => old.classList.remove('leaving'), OUT);
+  cur = n;
+  // ขาเข้า: มาจากเบลอแล้วค่อยคมขึ้น
+  const now = slides[cur];
+  now.classList.remove('leaving');
+  now.classList.add('active', 'arriving');
+  clearTimeout(now._t); now._t = setTimeout(() => now.classList.remove('arriving'), IN);
+  if (!RM && !fromHash){
+    sweep.classList.remove('go', 'back');
+    void sweep.offsetWidth;                 // บังคับ reflow ให้อนิเมชันเริ่มใหม่ทุกครั้ง
+    sweep.classList.add('go');
+    if (dir < 0) sweep.classList.add('back');
+  }
+  document.body.classList.toggle('cover', cur === 0);
+  $('#pg').textContent = `${cur+1} / ${slides.length}`;
+  railDot.style.transform = `translateX(${cur * 100}%)`;
+  try{ history.replaceState(null,'','#'+(cur+1)); }catch(e){}
+  if (enter[cur]) enter[cur]();
+}
+addEventListener('keydown', e => {
+  if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)){ e.preventDefault(); go(cur+1); }
+  else if (['ArrowLeft','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); go(cur-1); }
+  else if (e.key === 'Home') go(0);
+  else if (e.key === 'End') go(slides.length-1);
+  else if (e.key.toLowerCase() === 'f'){ document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+});
+$('#prev').onclick = () => go(cur-1);
+$('#next').onclick = () => go(cur+1);
+let tx = null;
+addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+addEventListener('touchend', e => {
+  if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; tx = null;
+  if (Math.abs(dx) > 50) go(cur + (dx < 0 ? 1 : -1));
+});
+
+/* ---------- S1: fluorescence field ---------- */
+(function(){
+  const cv = $('#fieldCv'), c = cv.getContext('2d');
+  const rods = Array.from({length:30}, () => ({
+    x: 700 + Math.random()*1300, y: Math.random()*1080, a: Math.random()*Math.PI*2,
+    v: .15 + Math.random()*.35, w: .002 + Math.random()*.004, L: 56 + Math.random()*40,
+    dox: Math.random() < .45, ph: Math.random()*6
+  }));
+  const dots = Array.from({length:70}, () => ({x: 600+Math.random()*1400, y: Math.random()*1080, r: 2+Math.random()*4, s: .1+Math.random()*.25}));
+  function stadium(L, W, fill, glow){
+    c.shadowColor = glow; c.shadowBlur = 26; c.fillStyle = fill;
+    c.beginPath(); c.roundRect(-L/2, -W/2, L, W, W/2); c.fill();
+  }
+  function frame(t){
+    c.clearRect(0,0,1920,1080);
+    for (const d of dots){ d.y -= d.s; if (d.y < -10) d.y = 1090;
+      c.shadowBlur = 14; c.shadowColor = 'oklch(0.76 0.14 250)'; c.fillStyle = 'oklch(0.76 0.14 250 / .55)';
+      c.beginPath(); c.arc(d.x, d.y, d.r, 0, 6.283); c.fill(); }
+    for (const r of rods){
+      r.x += Math.cos(r.a)*r.v; r.y += Math.sin(r.a)*r.v; r.a += r.w;
+      if (r.x < 560) r.a = 0.2; if (r.x > 2000) r.x = 560; if (r.y < -60) r.y = 1140; if (r.y > 1140) r.y = -60;
+      c.save(); c.translate(r.x, r.y); c.rotate(r.a);
+      stadium(r.L, 22, 'oklch(0.85 0.21 150)', 'oklch(0.85 0.21 150)');
+      if (r.dox){
+        c.shadowColor = 'oklch(0.7 0.22 27)'; c.shadowBlur = 14; c.fillStyle = 'oklch(0.7 0.22 27)';
+        for (let k = 0; k < 6; k++){ const px = -r.L/2 + 6 + k*(r.L-12)/5, py = (k%2 ? -17 : 17);
+          c.beginPath(); c.arc(px, py, 4.5, 0, 6.283); c.fill(); }
+      }
+      c.restore();
+    }
+    if (!RM && slides[0].classList.contains('active')) requestAnimationFrame(frame);
+    else if (!RM) setTimeout(() => requestAnimationFrame(frame), 250);
+  }
+  frame(0);
+})();
+
+/* ---------- S2: scattershot ---------- */
+(function(){
+  const s = $('#svg2'); const src = {x:70, y:390};
+  el('circle', {cx:src.x, cy:src.y, r:30, fill:'var(--red)', style:'filter:drop-shadow(0 0 14px var(--red))'}, s);
+  const healthy = [[430,130],[720,100],[440,660],[730,670],[900,390]];
+  const tumor = [[580,360],[690,430],[640,270]];
+  const draw = (pts, col, r) => pts.forEach(([x,y]) => {
+    el('circle', {cx:x, cy:y, r, fill:'oklch(0.2 0.05 255)', stroke:col, 'stroke-width':5}, s);
+    el('circle', {cx:x+8, cy:y-6, r:r*.42, class:'nuc', style:`--nuc:oklch(0.32 0.1 255);--d:${(Math.random()*.0).toFixed(2)}s`}, s);
+  });
+  draw(healthy, 'var(--blue)', 62); draw(tumor, 'var(--amber)', 58);
+  const all = healthy.concat(tumor);
+  all.forEach(([x,y],i) => {
+    const d = (i*.18).toFixed(2) + 's';
+    for (let k = 0; k < 2; k++){
+      const ox = (k? 10 : -10), oy = (k? -8 : 10);
+      el('circle', {class:'dot', cx:src.x, cy:src.y, r:9, style:`--tx:${x-src.x+ox}px;--ty:${y-src.y+oy}px;--d:${(i*.18 + k*.12).toFixed(2)}s`}, s);
+    }
+  });
+  // sync nuclei with their own shot delays
+  const nuc = s.querySelectorAll('.nuc');
+  nuc.forEach((n,i) => n.style.setProperty('--d', (i*.18).toFixed(2)+'s'));
+})();
+
+/* ---------- S4: three bacteria ---------- */
+(function(){
+  const s = $('#svg4'); const W = 300, H = 140, cy = 165;
+  function stadium(cx, n){
+    const r = H/2, L = W-H, P = 2*L + 2*Math.PI*r, pts = [];
+    for (let k = 0; k < n; k++){
+      let q = (k+.5)/n*P, x, y, nx, ny;
+      if (q < L){ x = -L/2+q; y = -r; nx = 0; ny = -1; }
+      else if ((q -= L) < Math.PI*r){ const a = -Math.PI/2 + q/r; x = L/2 + r*Math.cos(a); y = r*Math.sin(a); nx = Math.cos(a); ny = Math.sin(a); }
+      else if ((q -= Math.PI*r) < L){ x = L/2 - q; y = r; nx = 0; ny = 1; }
+      else { q -= L; const a = Math.PI/2 + q/r; x = -L/2 + r*Math.cos(a); y = r*Math.sin(a); nx = Math.cos(a); ny = Math.sin(a); }
+      pts.push({x:cx+x, y:cy+y, nx, ny});
+    }
+    return pts;
+  }
+  [250, 840, 1430].forEach((cx, bi) => {
+    el('rect', {x:cx-W/2, y:cy-H/2, width:W, height:H, rx:H/2, fill:'oklch(0.3 0.09 150 / .45)', stroke:'var(--green)', 'stroke-width':6, style:'filter:drop-shadow(0 0 14px var(--green))'}, s);
+    el('ellipse', {cx:cx-30, cy:cy+4, rx:62, ry:26, fill:'oklch(0.5 0.12 150 / .55)'}, s);
+    if (bi > 0) stadium(cx, 22).forEach((p, i) => {
+      const g = el('g', {class:'pop', style:`--d:${(bi===1?0.9:1.7) + i*.04}s`}, s);
+      el('line', {x1:p.x, y1:p.y, x2:p.x+p.nx*22, y2:p.y+p.ny*22, stroke:'var(--blue)', 'stroke-width':4}, g);
+      el('circle', {cx:p.x+p.nx*26, cy:p.y+p.ny*26, r:7, fill:'var(--blue)'}, g);
+      if (bi === 2){
+        el('line', {x1:p.x+p.nx*32, y1:p.y+p.ny*32, x2:p.x+p.nx*46, y2:p.y+p.ny*46, stroke:'var(--red)', 'stroke-width':4}, g);
+        el('circle', {cx:p.x+p.nx*54, cy:p.y+p.ny*54, r:11, fill:'var(--red)', style:'filter:drop-shadow(0 0 8px var(--red))'}, g);
+      }
+    });
+  });
+  [[545, '①  ใส่ตะขอ'], [1135, '②  คลิกยา']].forEach(([x,t]) => {
+    el('path', {d:`M${x-95} ${cy} H${x+85}`, stroke:'var(--ink2)', 'stroke-width':4, fill:'none'}, s);
+    el('path', {d:`M${x+70} ${cy-14} L${x+92} ${cy} L${x+70} ${cy+14}`, stroke:'var(--ink2)', 'stroke-width':4, fill:'none'}, s);
+    const tx = el('text', {x, y:cy-24, 'text-anchor':'middle', 'font-size':30, fill:'var(--ink)', 'font-family':'Anuphan', 'font-weight':600}, s); tx.textContent = t;
+  });
+})();
+
+/* ---------- S5: step 1 (metabolic labeling) ---------- */
+let run5 = 0;
+function build5(){
+  const s = $('#svg5'); s.innerHTML = '';
+  el('rect', {x:0, y:510, width:1100, height:230, fill:'oklch(0.2 0.05 195)'}, s);
+  [452, 492].forEach(y => el('path', {d:`M40 ${y} H1060`, stroke:'oklch(0.55 0.13 150)', 'stroke-width':10, 'stroke-linecap':'round'}, s));
+  for (let x = 90; x < 1060; x += 80) el('path', {d:`M${x} 452 V492`, stroke:'oklch(0.55 0.13 150)', 'stroke-width':6}, s);
+  const t1 = el('text', {x:40, y:580, 'font-size':28, fill:'var(--ink3)', 'font-family':'Anuphan'}, s); t1.textContent = 'ภายในเซลล์';
+  const t2 = el('text', {x:1060, y:430, 'text-anchor':'end', 'font-size':28, fill:'var(--ink3)', 'font-family':'Anuphan'}, s); t2.textContent = 'peptidoglycan';
+  const st = [];
+  for (let i = 0; i < 6; i++){
+    const x = 150 + i*140;
+    el('path', {d:`M${x} 452 V300`, stroke:'var(--ink2)', 'stroke-width':6, 'stroke-linecap':'round'}, s);
+    const d4 = el('circle', {cx:x, cy:380, r:15, fill:'var(--ink3)'}, s);
+    const d5 = el('circle', {cx:x, cy:310, r:15, fill:'var(--ink3)'}, s);
+    const hook = el('g', {style:'opacity:0'}, s);
+    el('circle', {r:16, fill:'var(--blue)', style:'filter:drop-shadow(0 0 10px var(--blue))'}, hook);
+    el('path', {d:'M-6 -16 q0 -18 12 -18', stroke:'var(--blue)', 'stroke-width':5, fill:'none', 'stroke-linecap':'round'}, hook);
+    st.push({x, d4, d5, hook});
+  }
+  const cp = el('g', {style:'opacity:0'}, s);
+  el('circle', {r:32, fill:'var(--amber)', style:'filter:drop-shadow(0 0 12px var(--amber))'}, cp);
+  const cpt = el('text', {y:9, 'text-anchor':'middle', 'font-size':26, 'font-weight':700, fill:'oklch(0.18 0.03 265)'}, cp); cpt.textContent = 'CP';
+  const k = el('text', {x:40, y:46, 'font-size':26, fill:'var(--ink3)', 'font-family':'Anuphan'}, s);
+  k.textContent = 'CP = D,D-carboxypeptidase (เอนไซม์ในผนังที่ตัดปลายเปปไทด์)';
+  return {st, cp};
+}
+const a = (e, kf, ms, o={}) => e.animate(kf, {duration:T(ms), easing:'cubic-bezier(.16,1,.3,1)', fill:'forwards', ...o});
+async function play5(){
+  const my = ++run5; const mode = $('#m1').getAttribute('aria-pressed') === 'true' ? 1 : 2;
+  const {st, cp} = build5();
+  const hy = mode === 1 ? 310 : 380;
+  if (mode === 1) st.forEach(o => o.d5.style.opacity = 0);
+  await sleep(500); if (my !== run5) return;
+  st.forEach((o, i) => {
+    o.hook.style.opacity = 1;
+    a(o.hook, [{transform:`translate(${o.x + (i%2?70:-70)}px, 90px)`, opacity:0}, {transform:`translate(${o.x}px, ${hy}px)`, opacity:1}], 1100, {delay:T(i*160)});
+  });
+  await sleep(2400); if (my !== run5) return;
+  cp.style.opacity = 1;
+  a(cp, [{transform:'translate(60px,120px)', opacity:0}, {transform:`translate(${st[0].x}px,190px)`, opacity:1}], 500);
+  await sleep(600); if (my !== run5) return;
+  for (let i = 0; i < 6; i++){
+    const o = st[i]; if (my !== run5) return;
+    a(cp, [{transform:`translate(${o.x}px,190px)`}], 320);
+    if (mode === 1){
+      if (i < 5) a(o.hook, [{transform:`translate(${o.x}px,${hy}px)`, opacity:1}, {transform:`translate(${o.x+30}px,${hy-210}px)`, opacity:0}], 700);
+    } else {
+      a(o.d5, [{transform:'translate(0,0)', opacity:1}, {transform:'translate(30px,-210px)', opacity:0}], 700);
+    }
+    await sleep(380);
+  }
+  a(cp, [{opacity:1},{opacity:0}], 500);
+  if (mode === 2) st.forEach(o => a(o.hook, [{filter:'brightness(1)'},{filter:'brightness(1.8)'},{filter:'brightness(1)'}], 900));
+}
+function setMode(m){
+  $('#m1').setAttribute('aria-pressed', m === 1); $('#m2').setAttribute('aria-pressed', m === 2);
+  $('#t1').hidden = m !== 1; $('#t2').hidden = m !== 2; play5();
+}
+$('#m1').onclick = () => setMode(1); $('#m2').onclick = () => setMode(2);
+enter[4] = play5;
+
+/* ---------- S6: click ---------- */
+let run6 = 0;
+function build6(){
+  const s = $('#svg6'); s.innerHTML = '';
+  el('rect', {x:0, y:650, width:1100, height:90, fill:'oklch(0.2 0.05 195)'}, s);
+  [592, 632].forEach(y => el('path', {d:`M40 ${y} H1060`, stroke:'oklch(0.55 0.13 150)', 'stroke-width':10, 'stroke-linecap':'round'}, s));
+  for (let x = 90; x < 1060; x += 80) el('path', {d:`M${x} 592 V632`, stroke:'oklch(0.55 0.13 150)', 'stroke-width':6}, s);
+  const inLbl = el('text', {x:40, y:706, 'font-size':28, fill:'var(--ink3)', 'font-family':'Anuphan'}, s); inLbl.textContent = 'ภายในเซลล์';
+  el('path', {d:'M240 592 V420', stroke:'var(--ink2)', 'stroke-width':8, 'stroke-linecap':'round'}, s);
+  const hook = el('g', {transform:'translate(240,400)'}, s);
+  el('circle', {r:22, fill:'var(--blue)', style:'filter:drop-shadow(0 0 12px var(--blue))'}, hook);
+  el('path', {d:'M-8 -22 q0 -26 16 -26', stroke:'var(--blue)', 'stroke-width':6, fill:'none', 'stroke-linecap':'round'}, hook);
+  const l1 = el('text', {x:40, y:330, 'font-size':32, fill:'var(--blue)', 'font-family':'Anuphan', 'font-weight':600}, s); l1.textContent = 'alkyne บนผนัง';
+  // drug: three hexagons + azide tag
+  const drug = el('g', {style:'opacity:0'}, s);
+  const hex = (cx, cy, r) => Array.from({length:6}, (_, k) => `${(cx + r*Math.cos(k*Math.PI/3+Math.PI/6)).toFixed(1)},${(cy + r*Math.sin(k*Math.PI/3+Math.PI/6)).toFixed(1)}`).join(' ');
+  [[0,0],[52,30],[104,0]].forEach(([x,y]) => el('polygon', {points:hex(x, y, 32), fill:'oklch(0.7 0.22 27 / .35)', stroke:'var(--red)', 'stroke-width':5, style:'filter:drop-shadow(0 0 10px var(--red))'}, drug));
+  const az = el('g', {transform:'translate(-62,0)'}, drug);
+  el('rect', {x:-38, y:-22, width:76, height:44, rx:22, fill:'var(--amber)'}, az);
+  const azt = el('text', {y:11, 'text-anchor':'middle', 'font-size':28, 'font-weight':700, fill:'oklch(0.18 0.03 265)', 'font-family':'Anuphan'}, az); azt.textContent = 'N₃';
+  const dl = el('text', {x:60, y:-60, 'text-anchor':'middle', 'font-size':32, fill:'var(--red)', 'font-family':'Anuphan', 'font-weight':600}, drug); dl.textContent = 'az-doxorubicin';
+  const cu = el('g', {style:'opacity:0'}, s);
+  el('circle', {r:20, fill:'var(--amber)', style:'filter:drop-shadow(0 0 12px var(--amber))'}, cu);
+  const cut = el('text', {y:8, 'text-anchor':'middle', 'font-size':20, 'font-weight':700, fill:'oklch(0.18 0.03 265)', 'font-family':'Anuphan'}, cu); cut.textContent = 'Cu⁺';
+  const flash = el('circle', {cx:310, cy:340, r:10, fill:'none', stroke:'var(--amber)', 'stroke-width':6, style:'opacity:0'}, s);
+  const tri = el('text', {x:560, y:470, 'font-size':34, fill:'var(--green)', 'font-family':'Anuphan', 'font-weight':700, style:'opacity:0'}, s);
+  tri.textContent = 'พันธะ triazole (ถาวร)';
+  const bond = el('path', {d:'M262 380 L310 345', stroke:'var(--green)', 'stroke-width':9, 'stroke-linecap':'round', style:'opacity:0;filter:drop-shadow(0 0 8px var(--green))'}, s);
+  return {drug, cu, flash, tri, bond, l1};
+}
+async function play6(){
+  const my = ++run6; const o = build6();
+  o.drug.style.opacity = 1; o.cu.style.opacity = 1;
+  a(o.drug, [{transform:'translate(900px,120px)', opacity:0}, {transform:'translate(720px,230px)', opacity:1, offset:.3}, {transform:'translate(760px,260px)', opacity:1, offset:.6}, {transform:'translate(760px,230px)', opacity:1}], 2600);
+  a(o.cu, [{transform:'translate(900px,100px)', opacity:0}, {transform:'translate(700px,330px)', opacity:1}], 2600);
+  await sleep(2800); if (my !== run6) return;
+  a(o.drug, [{transform:'translate(760px,230px)'}, {transform:'translate(420px,345px)'}], 1000, {easing:'cubic-bezier(.7,0,.3,1)'});
+  a(o.cu, [{transform:'translate(700px,330px)'}, {transform:'translate(330px,420px)'}], 1000, {easing:'cubic-bezier(.7,0,.3,1)'});
+  await sleep(1050); if (my !== run6) return;
+  o.flash.style.opacity = 1;
+  a(o.flash, [{r:10, opacity:1}, {r:90, opacity:0}], 800);
+  a(o.bond, [{opacity:0}, {opacity:1}], 300);
+  a(o.tri, [{opacity:0, transform:'translateY(12px)'}, {opacity:1, transform:'none'}], 700, {delay:T(300)});
+  a(o.cu, [{opacity:1}, {opacity:0}], 700, {delay:T(500)});
+}
+$('#again6').onclick = play6;
+enter[5] = play6;
+
+/* ---------- S7: tubes ---------- */
+(function(){
+  const s = $('#svg7');
+  [167, 500, 833].forEach((cx, i) => {
+    const w = 120, top = 60, bot = 470;
+    el('path', {d:`M${cx-w/2} ${top} V${bot-w/2} a${w/2} ${w/2} 0 0 0 ${w} 0 V${top}`, fill:'oklch(0.3 0.04 250 / .35)', stroke:'var(--ink2)', 'stroke-width':5, 'stroke-linecap':'round'}, s);
+    el('path', {d:`M${cx-w/2-12} ${top} H${cx+w/2+12}`, stroke:'var(--ink2)', 'stroke-width':6, 'stroke-linecap':'round'}, s);
+    el('ellipse', {class:'pellet' + (i === 2 ? ' dx' : ''), cx, cy:bot-14, rx:46, ry:26, style:`--d:${i*.25}s`}, s);
+  });
+})();
+
+/* ---------- S8: linker ---------- */
+(function(){
+  const s = $('#svg8');
+  const lanes = [
+    {y:200, name:'azidoacetic linker', sub:'สั้น เล็ก ติดแน่น แต่ตัดไม่ได้', cleave:false, bar:230, barT:'โหลดยาได้มาก ~10×'},
+    {y:500, name:'az-VC linker', sub:'ยาวกว่า มีจุดที่ cathepsin ตัดได้', cleave:true, bar:23, barT:'โหลดน้อยกว่า ×1'}
+  ];
+  lanes.forEach(L => {
+    const y = L.y;
+    const n = el('text', {x:40, y:y-118, 'font-size':38, 'font-weight':700, fill:'var(--ink)', 'font-family':'Anuphan'}, s); n.textContent = L.name;
+    const sb = el('text', {x:40, y:y-76, 'font-size':28, fill:'var(--ink2)', 'font-family':'Anuphan'}, s); sb.textContent = L.sub;
+    el('path', {d:`M120 ${y-50} V${y+50}`, stroke:'var(--green)', 'stroke-width':16, 'stroke-linecap':'round', style:'filter:drop-shadow(0 0 8px var(--green))'}, s);
+    const len = L.cleave ? 280 : 70;
+    el('path', {d:`M130 ${y} H${130+len}`, stroke:'var(--ink2)', 'stroke-width':5}, s);
+    if (L.cleave){
+      el('rect', {x:130+len/2-30, y:y-17, width:60, height:34, rx:8, fill:'var(--amber)'}, s);
+      const vc = el('text', {x:130+len/2, y:y+9, 'text-anchor':'middle', 'font-size':24, 'font-weight':700, fill:'oklch(0.18 0.03 265)', 'font-family':'Anuphan'}, s); vc.textContent = 'VC';
+    }
+  });
+  // nuclei (right of centre)
+  [200, 500].forEach(y => {
+    el('circle', {cx:1050, cy:y, r:88, fill:'oklch(0.22 0.06 255)', stroke:'var(--blue)', 'stroke-width':5}, s);
+    const t = el('text', {x:1050, y:y+10, 'text-anchor':'middle', 'font-size':28, fill:'var(--blue)', 'font-family':'Anuphan'}, s); t.textContent = 'นิวเคลียส';
+  });
+  el('circle', {id:'nucGlow', class:'opacity0', cx:1050, cy:500, r:88, fill:'oklch(0.7 0.22 27 / .45)'}, s);
+  // lane A drug: stays on linker; modified dox bounces
+  const dA = el('g', {id:'drugA', style:'--bx:760px'}, s);
+  el('circle', {cx:215, cy:200, r:20, fill:'var(--red)', style:'filter:drop-shadow(0 0 8px var(--red))'}, dA);
+  el('circle', {cx:215, cy:200, r:8, fill:'none', stroke:'var(--amber)', 'stroke-width':3}, dA);
+  el('circle', {cx:215, cy:200, r:20, fill:'oklch(0.7 0.22 27 / .25)', stroke:'var(--red)', 'stroke-width':3, 'stroke-dasharray':'5 5'}, s);
+  // lane B drug
+  el('circle', {cx:410, cy:500, r:20, fill:'oklch(0.7 0.22 27 / .25)', stroke:'var(--red)', 'stroke-width':3, 'stroke-dasharray':'5 5'}, s);
+  const dB = el('g', {id:'drugB', style:'--bx:640px'}, s);
+  el('circle', {cx:410, cy:500, r:20, fill:'var(--red)', style:'filter:drop-shadow(0 0 8px var(--red))'}, dB);
+  const sc = el('g', {id:'scis', class:'opacity0'}, s);
+  const sg = el('g', {transform:'translate(270,500)'}, sc);
+  el('circle', {r:34, fill:'var(--amber)', style:'filter:drop-shadow(0 0 12px var(--amber))'}, sg);
+  const ct = el('text', {y:6, 'text-anchor':'middle', 'font-size':18, 'font-weight':700, fill:'oklch(0.18 0.03 265)', 'font-family':'Anuphan'}, sg); ct.textContent = 'cathepsin';
+  el('circle', {id:'cutfl', class:'opacity0', cx:270, cy:500, r:46, fill:'none', stroke:'var(--amber)', 'stroke-width':5}, s);
+  // outcome text + loading bars
+  lanes.forEach(L => {
+    const o = el('text', {x:1180, y:L.y-6, 'font-size':28, fill:'var(--ink2)', 'font-family':'Anuphan'}, s);
+    let l1 = '', l2 = '';
+    if (L.cleave){ l1 = 'cathepsin ตัด → ยาแท้'; l2 = 'เข้านิวเคลียสได้'; }
+    else { l1 = 'ยาถูกแก้ไขที่ 3′-N'; l2 = 'เข้านิวเคลียสไม่ได้'; }
+    o.textContent = l1;
+    const o2 = el('text', {x:1180, y:L.y+30, 'font-size':28, fill:'var(--ink2)', 'font-family':'Anuphan'}, s); o2.textContent = l2;
+    const bx = 130, by = L.y + 100;
+    el('rect', {x:bx, y:by, width:230, height:22, rx:11, fill:'oklch(0.26 0.045 265)'}, s);
+    el('rect', {x:bx, y:by, width:L.bar, height:22, rx:11, fill:'var(--green)'}, s);
+    const bt = el('text', {x:bx+250, y:by+20, 'font-size':28, fill:'var(--ink)', 'font-family':'Anuphan'}, s); bt.textContent = L.barT;
+  });
+})();
+
+/* ---------- S9: dishes + zebrafish ---------- */
+(function(){
+  const dishes = [
+    {cv:$('#dishA'), rate:.055, cap:70, dox:false},
+    {cv:$('#dishB'), rate:.011, cap:14, dox:true}
+  ];
+  dishes.forEach(d => { d.c = d.cv.getContext('2d'); d.cells = []; });
+  function reset(d){
+    d.cells = Array.from({length:5}, () => spawn(d));
+    d.t = 0;
+  }
+  function spawn(d, from){
+    let x, y;
+    const R = 215;
+    do { x = 260 + (Math.random()*2-1)*R*.85; y = 240 + (Math.random()*2-1)*R*.85; } while (Math.hypot(x-260, y-240) > R*.85);
+    if (from){ x = from.x + (Math.random()*2-1)*34; y = from.y + (Math.random()*2-1)*34; }
+    return {x, y, r:20, born: performance.now()};
+  }
+  function draw(d, now){
+    const c = d.c; c.clearRect(0,0,520,480);
+    c.save(); c.beginPath(); c.arc(260, 240, 225, 0, 6.283); c.clip();
+    c.fillStyle = 'oklch(0.18 0.04 265)'; c.fillRect(0,0,520,480);
+    for (const k of d.cells){
+      const g = Math.min(1, (now - k.born)/700), r = k.r*(.5+.5*g);
+      c.shadowBlur = 16; c.shadowColor = 'oklch(0.76 0.14 250)';
+      c.fillStyle = d.dox ? 'oklch(0.34 0.1 255)' : 'oklch(0.4 0.1 250)';
+      c.beginPath(); c.arc(k.x, k.y, r, 0, 6.283); c.fill();
+      c.shadowBlur = 0; c.lineWidth = 3; c.strokeStyle = d.dox ? 'oklch(0.7 0.22 27 / .8)' : 'oklch(0.76 0.14 250)';
+      c.stroke();
+      c.fillStyle = 'oklch(0.76 0.14 250)'; c.beginPath(); c.arc(k.x+3, k.y-2, r*.42, 0, 6.283); c.fill();
+    }
+    c.restore();
+    c.lineWidth = 4; c.strokeStyle = 'oklch(0.5 0.04 265)'; c.beginPath(); c.arc(260, 240, 225, 0, 6.283); c.stroke();
+  }
+  let timer = null;
+  function tick(){
+    const now = performance.now();
+    dishes.forEach(d => {
+      d.t++;
+      if (d.t % 12 === 0){ // evaluate division every ~0.4s
+        [...d.cells].forEach(k => { if (d.cells.length < d.cap && Math.random() < d.rate*9) d.cells.push(spawn(d, k)); });
+      }
+      draw(d, now);
+    });
+    if (now - start > 14000){ start = now; dishes.forEach(reset); }
+  }
+  let start = performance.now();
+  enter[8] = () => {
+    clearInterval(timer); start = performance.now(); dishes.forEach(reset);
+    if (RM){ // static end state
+      dishes.forEach(d => { while (d.cells.length < (d.dox ? 8 : 40)) d.cells.push(spawn(d)); draw(d, performance.now()+1000); });
+      return;
+    }
+    timer = setInterval(() => { if (!slides[8].classList.contains('active')) { clearInterval(timer); return; } tick(); }, 33);
+  };
+  dishes.forEach(reset); dishes.forEach(d => draw(d, performance.now()+1000));
+
+  // zebrafish
+  const s = $('#svg9');
+  const fish = (y, label, tr, col) => {
+    const g = el('g', {transform:`translate(0,${y})`}, s);
+    const t = el('text', {x:20, y:22, 'font-size':28, fill:col, 'font-family':'Anuphan', 'font-weight':600}, g); t.textContent = label;
+    el('path', {d:'M70 120 C150 60 320 60 400 110 L520 70 L520 170 L400 130 C320 180 150 180 70 120 Z', fill:'oklch(0.24 0.05 255)', stroke:'var(--ink2)', 'stroke-width':4, 'stroke-linejoin':'round'}, g);
+    el('circle', {cx:112, cy:112, r:9, fill:'var(--ink)'}, g);
+    el('ellipse', {cx:230, cy:136, rx:78, ry:40, fill:'none', stroke:'var(--amber)', 'stroke-width':3, 'stroke-dasharray':'8 6'}, g);
+    el('circle', {class:'tumor', cx:230, cy:136, r:tr}, g);
+  };
+  fish(20, 'flu-Lmat', 40, 'var(--ink)');
+  fish(250, 'dox-Lmat', 15, 'var(--red)');
+})();
+
+enter[0] = () => {};
+const h = parseInt(location.hash.slice(1), 10);
+if (h > 1 && h <= slides.length) go(h-1, true);
+</script>
+</body>
+</html>
